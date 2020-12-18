@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/jm33-m0/go-cdn2proxy"
+	cdn2proxy "github.com/jm33-m0/go-cdn2proxy"
 )
 
 func main() {
