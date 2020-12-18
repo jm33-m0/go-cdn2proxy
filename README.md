@@ -33,7 +33,7 @@ import (
 )
 
 func main() {
-    err := cdn2proxy.StartServer("9000", "127.0.0.1:8000")
+    err := cdn2proxy.StartServer("9000", "127.0.0.1:8000", false)
     if err != nil {
         log.Fatal(err)
     }

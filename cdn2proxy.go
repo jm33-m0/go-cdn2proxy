@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -21,9 +22,14 @@ var (
 // StartServer start websocket server
 // port: listen on 127.0.0.1:port
 // destAddr: send everything here, we only want a single purpose proxy
-func StartServer(port, destAddr string) (err error) {
+func StartServer(port, destAddr string, silent bool) (err error) {
 	// set DestAddr
 	DestAddr = destAddr
+
+	// suppress log output
+	if silent {
+		log.SetOutput(ioutil.Discard)
+	}
 
 	// HTTP server
 	log.Printf("websocket server listening on 127.0.0.1:%s", port)
