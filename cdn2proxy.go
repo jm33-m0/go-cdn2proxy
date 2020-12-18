@@ -18,6 +18,9 @@ var (
 	DestAddr = "127.0.0.1:8000"
 )
 
+// StartServer start websocket server
+// port: listen on 127.0.0.1:port
+// destAddr: send everything here, we only want a single purpose proxy
 func StartServer(port, destAddr string) (err error) {
 	// set DestAddr
 	DestAddr = destAddr
@@ -39,10 +42,8 @@ func serveWS(ws *websocket.Conn) {
 		cancel()
 		ws.Close()
 	}()
+
 	// connect to destination
-	// conn, err := tls.Dial("tcp", DestAddr, &tls.Config{
-	// 	InsecureSkipVerify: true,
-	// })
 	conn, err := net.Dial("tcp", DestAddr)
 	if err != nil {
 		log.Printf("Cannot dial destination %s: %v", DestAddr, err)
@@ -161,6 +162,7 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 		n, err = io.ReadFull(conn, buf[:addrLen])
 		if n != addrLen {
 			log.Print("invalid hostname: " + err.Error())
+			return
 		}
 		addr = string(buf[:addrLen])
 
