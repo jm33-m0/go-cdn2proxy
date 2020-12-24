@@ -85,7 +85,8 @@ func serveWS(ws *websocket.Conn) {
 // StartProxy on client side, start a socks5 proxy
 // url: websocket server
 // addr: local proxy address
-func StartProxy(addr, url string) error {
+// doh: DNS over HTTPS server, eg. https://9.9.9.9/dns-query
+func StartProxy(addr, url, doh string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -101,7 +102,7 @@ func StartProxy(addr, url string) error {
 
 	// use DoH resolver
 	net.DefaultResolver, err = dns.NewDoHResolver(
-		"https://9.9.9.9/dns-query",
+		doh,
 		dns.DoHCache())
 	if err != nil {
 		log.Fatal(err)

@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	err := cdn2proxy.StartProxy("127.0.0.1:10888", "wss://10.10.10.1/ws")
+	err := cdn2proxy.StartProxy("127.0.0.1:10888", "wss://10.10.10.1/ws", "https://9.9.9.9/dns-query")
 	if err != nil {
 		log.Fatal(err)
 	}
