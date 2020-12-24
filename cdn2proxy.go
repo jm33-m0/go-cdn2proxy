@@ -12,6 +12,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ncruces/go-dns"
 	"golang.org/x/net/websocket"
 )
 
@@ -97,6 +98,14 @@ func StartProxy(addr, url string) error {
 		cancel()
 		listener.Close()
 	}()
+
+	// use DoH resolver
+	net.DefaultResolver, err = dns.NewDoHResolver(
+		"https://9.9.9.9/dns-query",
+		dns.DoHCache())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for ctx.Err() == nil {
 		ws, err := websocket.Dial(url, "", "http://localhost/")
