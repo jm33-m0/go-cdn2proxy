@@ -27,7 +27,7 @@ var (
 )
 
 // use this logger
-var Logger = log.New(os.Stderr, "cdn2proxy server: ", log.Ldate)
+var Logger = log.New(os.Stderr, "cdn2proxy: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
 
 // StartServer start websocket server
 // port: listen on 127.0.0.1:port
@@ -37,7 +37,7 @@ func StartServer(port, destAddr string, logOutput io.Writer) (err error) {
 	DestAddr = destAddr
 
 	// set log output
-	Logger = log.New(logOutput, "cdn2proxy server: ", log.Ldate)
+	Logger = log.New(logOutput, "cdn2proxy server: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
 
 	// HTTP server
 	Logger.Printf("websocket server listening on 127.0.0.1:%s", port)
@@ -96,6 +96,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) {
 // StartProxy on client side, start a socks5 proxy
 // url: websocket server
 // addr: local proxy address
+// proxy: proxy for websocket connection, eg. socks5://127.0.0.1:1080
 // doh: DNS over HTTPS server, eg. https://9.9.9.9/dns-query
 func StartProxy(addr, wsurl, proxy, doh string) error {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -238,6 +239,7 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 
 	// io copy to websocket
 	go func() {
+		defer cancel()
 		_, err := io.Copy(wsconn, conn)
 		if err != nil {
 			Logger.Printf("proxy handleConn ioCopy proxy->websocket: %v", err)
@@ -245,6 +247,7 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 		}
 	}()
 	go func() {
+		defer cancel()
 		_, err := io.Copy(conn, wsconn)
 		if err != nil {
 			Logger.Printf("proxy handleConn ioCopy websocket->proxy: %v", err)
