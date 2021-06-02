@@ -73,7 +73,6 @@ func serveWS(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	go func() {
-		defer cancel()
 		_, err := io.Copy(conn, wsconn)
 		if err != nil {
 			Logger.Printf("serveWS ioCopy ws->dest: %v", err)
@@ -81,7 +80,6 @@ func serveWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	go func() {
-		defer cancel()
 		_, err := io.Copy(wsconn, conn)
 		if err != nil {
 			Logger.Printf("serveWS ioCopy dest->ws: %v", err)
@@ -240,7 +238,6 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 
 	// io copy to websocket
 	go func() {
-		defer cancel()
 		_, err := io.Copy(wsconn, conn)
 		if err != nil {
 			Logger.Printf("proxy handleConn ioCopy proxy->websocket: %v", err)
@@ -248,7 +245,6 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 		}
 	}()
 	go func() {
-		defer cancel()
 		_, err := io.Copy(conn, wsconn)
 		if err != nil {
 			Logger.Printf("proxy handleConn ioCopy websocket->proxy: %v", err)
