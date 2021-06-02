@@ -9,15 +9,21 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/ncruces/go-dns"
-	"golang.org/x/net/websocket"
 )
 
 var (
 	DestAddr = "127.0.0.1:8000"
+
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
 )
 
 // use this logger
@@ -35,7 +41,7 @@ func StartServer(port, destAddr string, logOutput io.Writer) (err error) {
 
 	// HTTP server
 	Logger.Printf("websocket server listening on 127.0.0.1:%s", port)
-	http.Handle("/ws", websocket.Handler(serveWS))
+	http.HandleFunc("/ws", serveWS)
 	err = http.ListenAndServe("127.0.0.1:"+port, nil)
 	if err != nil {
 		Logger.Fatal(err)
@@ -43,7 +49,14 @@ func StartServer(port, destAddr string, logOutput io.Writer) (err error) {
 	return
 }
 
-func serveWS(ws *websocket.Conn) {
+func serveWS(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		Logger.Println(err)
+		return
+	}
+	wsconn := ws.UnderlyingConn()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	Logger.Printf("Got a connection to websocket server: %s", ws.RemoteAddr())
 	defer func() {
@@ -61,7 +74,7 @@ func serveWS(ws *websocket.Conn) {
 
 	go func() {
 		defer cancel()
-		_, err := io.Copy(conn, ws)
+		_, err := io.Copy(conn, wsconn)
 		if err != nil {
 			Logger.Printf("serveWS ioCopy ws->dest: %v", err)
 			return
@@ -69,7 +82,7 @@ func serveWS(ws *websocket.Conn) {
 	}()
 	go func() {
 		defer cancel()
-		_, err := io.Copy(ws, conn)
+		_, err := io.Copy(wsconn, conn)
 		if err != nil {
 			Logger.Printf("serveWS ioCopy dest->ws: %v", err)
 			return
@@ -86,7 +99,7 @@ func serveWS(ws *websocket.Conn) {
 // url: websocket server
 // addr: local proxy address
 // doh: DNS over HTTPS server, eg. https://9.9.9.9/dns-query
-func StartProxy(addr, url, doh string) error {
+func StartProxy(addr, wsurl, proxy, doh string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -105,13 +118,25 @@ func StartProxy(addr, url, doh string) error {
 		doh,
 		dns.DoHCache())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	for ctx.Err() == nil {
-		ws, err := websocket.Dial(url, "", "http://localhost/")
+		// dialer
+		dialer := websocket.DefaultDialer
+
+		// proxy
+		if proxy != "" {
+			proxyURL, err := url.Parse(proxy)
+			if err != nil {
+				return err
+			}
+			dialer.Proxy = http.ProxyURL(proxyURL)
+		}
+
+		ws, _, err := dialer.Dial(wsurl, nil)
 		if err != nil {
-			Logger.Printf("websocket connection to %s failed: %v", url, err)
+			Logger.Printf("websocket connection to %s failed: %v", wsurl, err)
 			cancel()
 			return err
 		}
@@ -210,10 +235,13 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 		return
 	}
 
+	// ws connection
+	wsconn := ws.UnderlyingConn()
+
 	// io copy to websocket
 	go func() {
 		defer cancel()
-		_, err := io.Copy(ws, conn)
+		_, err := io.Copy(wsconn, conn)
 		if err != nil {
 			Logger.Printf("proxy handleConn ioCopy proxy->websocket: %v", err)
 			return
@@ -221,7 +249,7 @@ func handleConn(conn net.Conn, ws *websocket.Conn) {
 	}()
 	go func() {
 		defer cancel()
-		_, err := io.Copy(conn, ws)
+		_, err := io.Copy(conn, wsconn)
 		if err != nil {
 			Logger.Printf("proxy handleConn ioCopy websocket->proxy: %v", err)
 			return
