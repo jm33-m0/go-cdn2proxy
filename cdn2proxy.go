@@ -73,6 +73,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	go func() {
+		defer cancel()
 		_, err := io.Copy(conn, wsconn)
 		if err != nil {
 			Logger.Printf("serveWS ioCopy ws->dest: %v", err)
@@ -80,6 +81,7 @@ func serveWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	go func() {
+		defer cancel()
 		_, err := io.Copy(wsconn, conn)
 		if err != nil {
 			Logger.Printf("serveWS ioCopy dest->ws: %v", err)
