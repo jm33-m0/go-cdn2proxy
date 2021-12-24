@@ -32,6 +32,8 @@ var Logger = log.New(os.Stderr, "cdn2proxy: ", log.Ldate|log.Ltime|log.Lmicrosec
 // StartServer start websocket server
 // port: listen on 127.0.0.1:port
 // destAddr: send everything here, we only want a single purpose proxy
+// wspath: access this path to reach ws service, eg. /ws
+// if you use go-cdn2proxy along with other HTTP server, prevent multiple `/`
 func StartServer(port, destAddr, wspath string, logOutput io.Writer) (err error) {
 	// set DestAddr
 	DestAddr = destAddr
