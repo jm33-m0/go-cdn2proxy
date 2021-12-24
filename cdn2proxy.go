@@ -41,7 +41,7 @@ func StartServer(port, destAddr string, logOutput io.Writer) (err error) {
 
 	// HTTP server
 	Logger.Printf("websocket server listening on 127.0.0.1:%s", port)
-	http.HandleFunc("/ws", serveWS)
+	http.HandleFunc("/", serveWS)
 	err = http.ListenAndServe("127.0.0.1:"+port, nil)
 	if err != nil {
 		Logger.Fatal(err)
@@ -96,10 +96,13 @@ func serveWS(w http.ResponseWriter, r *http.Request) {
 }
 
 // StartProxy on client side, start a socks5 proxy
-// url: websocket server
-// addr: local proxy address
-// proxy: proxy for websocket connection, eg. socks5://127.0.0.1:1080
-// doh: DNS over HTTPS server, eg. https://9.9.9.9/dns-query
+// url: websocket server. eg: wss://example.com/path/to/ws
+// use wss instead of ws since your reverse proxy (nginx, Cloudflare)
+// should be using TLS
+// addr: local proxy address, used as agent's outgoing proxy
+// proxy: proxy for websocket connection, if you cannot directly connect to ws server, use this
+// eg. socks5://127.0.0.1:1080
+// doh: DNS over HTTPS server, eg. https://9.9.9.9/dns-query, prevent DNS leaks
 func StartProxy(addr, wsurl, proxy, doh string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	listener, err := net.Listen("tcp", addr)
