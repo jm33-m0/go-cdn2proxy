@@ -33,7 +33,8 @@ import (
 )
 
 func main() {
-    err := cdn2proxy.StartServer("9000", "127.0.0.1:8000", os.Stderr)
+    err := cdn2proxy.StartServer("9000", "127.0.0.1:8000", "ws", os.Stderr)
+    // `ws` is the path to your websocket server
     if err != nil {
         log.Fatal(err)
     }
@@ -53,6 +54,7 @@ import (
 
 func main() {
     err := cdn2proxy.StartProxy("127.0.0.1:10888", "wss://example.com/ws", "socks5://127.0.0.1:1080", "https://9.9.9.9/dns-query")
+    // here `/ws` must match the one set in `StartServer`
     if err != nil {
         log.Fatal(err)
     }
