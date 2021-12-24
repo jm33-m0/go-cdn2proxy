@@ -32,7 +32,7 @@ var Logger = log.New(os.Stderr, "cdn2proxy: ", log.Ldate|log.Ltime|log.Lmicrosec
 // StartServer start websocket server
 // port: listen on 127.0.0.1:port
 // destAddr: send everything here, we only want a single purpose proxy
-func StartServer(port, destAddr string, logOutput io.Writer) (err error) {
+func StartServer(port, destAddr, wspath string, logOutput io.Writer) (err error) {
 	// set DestAddr
 	DestAddr = destAddr
 
@@ -41,7 +41,7 @@ func StartServer(port, destAddr string, logOutput io.Writer) (err error) {
 
 	// HTTP server
 	Logger.Printf("websocket server listening on 127.0.0.1:%s", port)
-	http.HandleFunc("/", serveWS)
+	http.HandleFunc("/"+wspath, serveWS)
 	err = http.ListenAndServe("127.0.0.1:"+port, nil)
 	if err != nil {
 		Logger.Fatal(err)
